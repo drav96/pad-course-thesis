@@ -1,21 +1,34 @@
 /**
- * @module TaskService
- * @description :: This module contains methods that do something for TaskController, manages every interaction with datastore regarding tasks collections.
+ * @module UserService
+ * @description :: This module contains methods that do something for UserController, manages every interaction with datastore regarding users collections.
  */
+const User = require('../models/UserModel');
 
-const Task = require('../models/TaskModel');
 module.exports = {
 
+	/**
+	 *
+	 * @param {string} userId
+	 * @returns {Promise}
+	 */
+
+	getById: async (userId) => {
+		try {
+			return await User.findById(userId).select('-password');
+		} catch (err) {
+			throw err;
+		}
+	},
 
 	/**
 	 *
-	 * @param taskId
-	 * @param fields
+	 * @param id
 	 * @returns {Promise<*>}
 	 */
-	getTaskById: async (taskId, fields) => {
+	getMyProfile: async (id) => {
+		let userId = id.toString();
 		try {
-			return await Task.findById(taskId).select(fields);
+			return await User.findById(userId).select('-password');
 		} catch (err) {
 			throw err;
 		}
@@ -23,34 +36,67 @@ module.exports = {
 
 	/**
 	 *
-	 * @returns {Promise.<*>}
+	 * @param query
+	 * @returns {Promise<*>}
 	 */
-	getTaskList: async () => {
+	getAll: async (query) => {
 		try {
-			return await Task.find({});
+			return await User.find(query).select('-password');
+		} catch (err) {
+			throw err;
+		}
+	},
+	createUser: async (newUser) => {
+		newUser.avatar = User.gravatar('', newUser.email);
+		try {
+			let existingUser = await User.findOne({$or: [{username: newUser.username}, {email: newUser.email}]});
+
+			if (!existingUser) {
+				return await User.create(newUser);
+			}
+
+			if (!existingUser.isActive) {
+				return await User.findByIdAndUpdate({_id: existingUser._id}, {$set: newUser}, {new: true});
+			}
+
+			if (existingUser.email === newUser.email) {
+				throw new errors.EmailUsedError();
+			}
+
+			if (existingUser.username === newUser.username) {
+				throw new errors.UsernameUsedError();
+			}
+
 		} catch (err) {
 			throw err;
 		}
 	},
 
+	addTaskToUser: async (taskId, userId) => {
+		try {
+			return await User.findByIdAndUpdate(userId,
+				{
+					$push: {"tasks": taskId}
+				},
+				{safe: true, upsert: true});
+		} catch (err) {
+			throw(err)
+		}
+	},
+
 	/**
 	 *
-	 * @param {Object} data
+	 * @param {string} userId
+	 * @param {Object} params
 	 * @returns {Promise.<*>}
 	 */
-	createTask: async (data) => {
-
-		let newTask = {
-			name: data.name,
-			description: data.description,
-			time: {
-				taskTime: data.taskTime,
-				bonusTime: data.taskTime / 2
-			},
-			status: "INITIAL"
+	updateMyProfile: async (userId, params) => {
+		let dataToUpdate = {
+			firstName: params.firstName,
+			lastName: params.lastName,
 		};
 		try {
-			return await Task.create(newTask);
+			return await User.findByIdAndUpdate(userId, dataToUpdate, {new: true}).select('-password');
 		} catch (err) {
 			throw err;
 		}
@@ -58,27 +104,30 @@ module.exports = {
 
 	/**
 	 *
-	 * @param taskId
-	 * @param data
+	 * @param {string} userId
+	 * @param {string} newPassword
 	 * @returns {Promise.<*>}
 	 */
-	updateTaskById: async (taskId, data) => {
-		let taskToUpdate = {};
-		if (data.name) {
-			taskToUpdate.name = data.name;
-		}
-		if (data.description) {
-			taskToUpdate.description = data.description;
-		}
-		if (data.status) {
-			taskToUpdate.status = data.status;
-		}
+	updateMyPassword: async (userId, newPassword) => {
 		try {
-			return await Task.findByIdAndUpdate(
-				{_id: taskId},
-				{
-					$set: taskToUpdate
-				},
+			return await User.findByIdAndUpdate(userId, {
+				$set: {password: newPassword}
+			}).select('_id username email');
+		} catch (err) {
+			throw err;
+		}
+	},
+
+	/**
+	 *
+	 * @param {string} userId
+	 * @param {Object} dataToUpdate
+	 * @returns {Promise.<*>}
+	 */
+	updateById: async (userId, dataToUpdate) => {
+		try {
+			return await User.findByIdAndUpdate(userId,
+				{$set: dataToUpdate},
 				{new: true});
 		} catch (err) {
 			throw err;
@@ -86,16 +135,28 @@ module.exports = {
 	},
 	/**
 	 *
-	 * @param {string} taskId
+	 * @param {string} userId
 	 * @returns {Promise.<*>}
 	 */
-	removeTaskById: async (taskId) => {
+	removeUser: async (userId) => {
 		try {
-			return await Task.remove({_id: taskId});
+			return await User.remove(userId);
 		} catch (err) {
 			throw err;
 		}
 	},
 
+	/**
+	 *
+	 * @param userId
+	 * @returns {Promise<*>}
+	 */
+	removeMyAccount: async (userId) => {
+		try {
+			return await User.remove({_id: userId});
+		} catch (err) {
+			throw err;
+		}
+	},
 
 };

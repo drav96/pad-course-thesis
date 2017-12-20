@@ -6,9 +6,6 @@
 const TaskService = require('./../services/TaskService');
 const logger = require('../config/logger.js');
 
-const os = require('os');
-const hostname = os.hostname();
-
 module.exports = {
 
 	getTaskById: async (req, res) => {
@@ -28,7 +25,6 @@ module.exports = {
 		try {
 			let tasks = await TaskService.getTaskList();
 			res.status(200).json(tasks);
-
 		} catch (err) {
 			logger.error('TaskController.getTaskList(): ', err);
 			res.status(500).json(err);
@@ -36,7 +32,6 @@ module.exports = {
 	},
 
 	createTask: async (req, res) => {
-		console.log("This is host ===>>>", `${hostname}`)
 		let requestData = {
 			name: req.body.name,
 			description: req.body.description,

@@ -1,140 +1,134 @@
 /**
- * @module TaskController
+ * @module UserController
  * @description This module contains methods which extracts the required parameters from the request and forwards them onto the corresponding service layer and return back the result.
  */
 
-const TaskService = require('./../services/TaskService');
+const UserService = require('./../services/UserService');
 const logger = require('../config/logger.js');
-
 
 module.exports = {
 
-	getTaskById: async (req, res) => {
-		let taskId = req.params.taskId;
-		let fields = req.query.fields;
+	getById: async (req, res) => {
+		let userId = req.params.userId;
 		try {
-			let task = await TaskService.getTaskById(taskId, fields);
-			res.format({
-				'text/plain': function () {
-					res.status(200).send(task);
-				},
-
-				'text/html': function () {
-					res.status(200).send(`<p>${task}</p>`);
-				},
-
-				'application/json': function () {
-					res.status(200).json(task);
-				},
-
-				'default': function () {
-					res.status(406).send('Not Acceptable');
-				}
-			});
+			let user = await UserService.getById(userId);
+			return res.status(200).json(user);
 		} catch (err) {
-			logger.error('TaskController.getTask(): ', err);
-			res.status(500).json(err);
+			logger.error('UserController.getById(): ', err);
+			return res.status(500).end(err);
 		}
 	},
 
-	getTaskList: async (req, res) => {
+	createUser: async (req, res) => {
+		let params = {
+			username: req.body.username,
+			email: req.body.email,
+			password: req.body.password,
+			firstName: req.body.firstName,
+			lastName: req.body.lastName,
+		};
+
 		try {
-			let tasks = await TaskService.getTaskList();
-			res.format({
-				'text/plain': function () {
-					res.status(200).send(tasks);
-				},
-
-				'text/html': function () {
-					res.status(200).send(`<p>${tasks}</p>`);
-				},
-
-				'application/json': function () {
-					res.status(200).json(tasks);
-				},
-
-				'default': function () {
-					res.status(406).send('Not Acceptable');
-				}
-			});
+			let user = await UserService.createUser(params);
+			res.status(200).json(user);
 		} catch (err) {
-			logger.error('TaskController.getTaskList(): ', err);
-			res.status(500).json(err);
+			logger.error('AuthController.register(): ', err);
+			return res.status(err.statusCode || 500).json(err.message || err);
+		}
+	},
+	getMyProfile: async (req, res) => {
+		let userId = req.user._id;
+		try {
+			let user = await UserService.getMyProfile(userId);
+			return res.status(200).json(user);
+		} catch (err) {
+			logger.error('UserController.getMyProfile(): ', err);
+			return res.status(500).end(err);
 		}
 	},
 
-	createTask: async (req, res) => {
-		let requestData = {
-			name: req.body.name,
-			description: req.body.description,
-			taskTime: req.body.taskTime
+	getAll: async (req, res) => {
+		try {
+			let regex = new RegExp(req.query.term, 'i');
+			let query = {username: regex};
+			let users = await UserService.getAll(query);
+			res.status(200).json(users);
+		} catch (err) {
+			logger.error('UserController.getAll(): ', err);
+			res.status(500).end();
+		}
+	},
+	addTaskToUser: async (req, res) => {
+		let userId = req.params.userId;
+		let taskId = req.body.taskId;
+		try {
+			let user = await UserService.addTaskToUser(userId, taskId);
+			res.status(200).json(user);
+		} catch (err) {
+			logger.error('TaskController.addTaskToUser(): ', err);
+			res.status(500).json(err);
+		}
+	},
+	updateMyProfile: async (req, res) => {
+		let userId = req.user._id;
+		let params = {
+			firstName: req.body.firstName,
+			lastName: req.body.lastName,
 		};
 		try {
-			let task = await TaskService.createTask(requestData);
-			res.format({
-				'text/plain': function () {
-					res.status(200).send(task);
-				},
-
-				'text/html': function () {
-					res.status(200).send(`<p>${task}</p>`);
-				},
-
-				'application/json': function () {
-					res.status(200).json(task);
-				},
-
-				'default': function () {
-					res.status(406).send('Not Acceptable');
-				}
-			});
+			let user = await UserService.updateMyProfile(userId, params);
+			res.status(200).json(user);
 		} catch (err) {
-			logger.error('TaskController.createTask(): ', err);
-			res.status(500).json(err);
+			logger.error('UserController.updateMyProfile(): ', err);
+			res.status(500).end();
 		}
 	},
 
-	updateTask: async (req, res) => {
-		let taskId = req.params.taskId;
-		let updatedData = {
-			name: req.body.name,
-			description: req.body.description,
-			status: req.body.status
-		};
+	updateMyPassword: async (req, res) => {
+
+		let userId = req.user._id;
+		let newPassword = req.body.password;
 		try {
-			let task = await TaskService.updateTaskById(taskId, updatedData);
-			res.format({
-				'text/plain': function () {
-					res.status(200).send(task);
-				},
-
-				'text/html': function () {
-					res.status(200).send(`<p>${task}</p>`);
-				},
-
-				'application/json': function () {
-					res.status(200).json(task);
-				},
-
-				'default': function () {
-					res.status(406).send('Not Acceptable');
-				}
-			});
+			let updatedUser = await UserService.updateMyPassword(userId, newPassword);
+			res.status(200).json(updatedUser);
 		} catch (err) {
-			logger.error('TaskController.updateTask(): ', err);
-			res.status(500).json(err);
+			logger.error('UserController.updateMyPassword(): ', err);
+			res.status(500).end();
 		}
 	},
 
-	deleteTask: async (req, res) => {
-		let taskId = req.params.taskId;
+	updateById: async (req, res) => {
+		let userId = req.params.userId;
+		let params = req.body;
 		try {
-			let tasks = await TaskService.removeTaskById(taskId);
-			res.status(200).json(tasks);
+			let user = await UserService.updateById(userId, params);
+			res.status(200).json(user);
 		} catch (err) {
-			logger.error('TaskController.deleteTask(): ', err);
-			res.status(500).json(err);
+			logger.error('UserController.updateById(): ', err);
+			res.status(500).end();
 		}
 	},
+
+	deleteUser: async (req, res) => {
+		let userId = req.params.userId;
+		try {
+			let user = await UserService.removeUser(userId);
+			res.status(200).json(user);
+		} catch (err) {
+			logger.error('UserController.deleteUser(): ', err);
+			res.status(500).end();
+		}
+	},
+
+	deleteMyUser: async (req, res) => {
+		let userId = req.user._id;
+		try {
+			let user = await UserService.removeMyAccount(userId);
+			res.status(200).json(user);
+		} catch (err) {
+			logger.error('UserController.deleteMyUser(): ', err);
+			res.status(500).end();
+		}
+	}
 
 };

@@ -31,10 +31,3 @@ docker-compose -f docker-compose.yml up
 Nginx
 -----
 docker-compose -f docker-compose-proxy.yml up -d --build
-
-echo "# pad-course-thesis" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git remote add origin https://github.com/drav96/pad-course-thesis.git
-git push -u origin master

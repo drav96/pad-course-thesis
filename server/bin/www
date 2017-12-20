@@ -17,10 +17,19 @@ const hostname = os.hostname();
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
+let env = app.get('env')
 /**
  * Create HTTP server.
- */let server = http.createServer(app);
-const uri = 'mongodb://' + config.development.host + ':' + config.development.port + '/' + config.development.database;
+ */
+let server = http.createServer(app);
+let uri;
+
+if (env === 'production') {
+	uri = 'mongodb://' + config.production.host + ':' + config.production.port + '/' + config.production.database;
+} else {
+	uri = 'mongodb://' + config.development.host + ':' + config.development.port + '/' + config.development.database;
+
+}
 // Use bluebird
 mongoose.Promise = global.Promise;
 let options = {
