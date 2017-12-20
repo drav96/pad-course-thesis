@@ -1,0 +1,20 @@
+{
+  "development": {
+    "host": "restapihttp_mongo_1",
+    "port": "27017",
+    "scheme": "mongodb",
+    "database": "warehouse"
+  },
+  "test": {
+    "host": "restapihttp_mongo_1 ",
+    "port": "27017",
+    "scheme": "mongodb",
+    "database": "warehouse"
+  },
+  "production": {
+    "host": "restapihttp_mongo_1 ",
+    "port": "27017",
+    "scheme": "mongodb",
+    "database": "warehouse"
+  }
+}
