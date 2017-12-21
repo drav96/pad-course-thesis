@@ -10,6 +10,7 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const router = require('./routes');
 const cors = require('cors');
+const redis = require('redis');
 
 /**
  * Create Express server.
@@ -30,7 +31,14 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
-
+let client = redis.createClient('6379', 'redis');
+console.log(process.env.REDIS_PORT_6379_TCP_ADDR + ':' + process.env.REDIS_PORT_6379_TCP_PORT);
+app.get('/index', function(req, res, next) {
+	client.incr('counter', function(err, counter) {
+		if(err) return next(err);
+		res.send('This page has been viewed ' + counter + ' times!');
+	});
+});
 app.use('/', router());
 
 /**
